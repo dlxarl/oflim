@@ -1,0 +1,25 @@
+{
+  "name": "oflim-desktop",
+  "version": "1.10.3",
+  "description": "OFLIM — Silver Bromide B&W Film Simulation & Darkroom Processor",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:mac": "electron-packager . OFLIM --platform=darwin --arch=arm64 --icon=build/icon --out=dist --overwrite --app-bundle-id=com.oflim.desktop --app-category-type=public.app-category.photography --build-version=1.10.3 --app-version=1.10.3 --prune=true"
+  },
+  "keywords": [
+    "oflim",
+    "film-simulation",
+    "black-and-white",
+    "darkroom",
+    "grain",
+    "photography",
+    "sensitometry"
+  ],
+  "author": "OFLIM / Silver Bromide Reconstruction",
+  "license": "MIT",
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^34.5.8"
+  }
+}

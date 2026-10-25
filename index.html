@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:;">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OFLIM</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <!-- Clean, Minimal Technical Header: Brand on left, Action Buttons on right -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="brand-name">OFLIM</span>
+    </div>
+
+    <div class="header-actions">
+      <button class="tech-btn" id="btnOpen" title="Open Image File (Cmd+O)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <span>OPEN [O]</span>
+      </button>
+
+      <button class="tech-btn icon-only" id="btnUndo" title="Undo Last Adjustment (Cmd+Z)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+      </button>
+
+      <button class="tech-btn icon-only" id="btnRedo" title="Redo Adjustment (Cmd+Shift+Z / Cmd+Y)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+      </button>
+
+      <button class="tech-btn" id="btnSplitCompare" title="Interactive Split Compare (C)">
+        <span>SPLIT [C]</span>
+      </button>
+
+      <button class="tech-btn" id="btnCompare" title="Click to toggle or hold Spacebar to compare">
+        <span>COMPARE [SPACE]</span>
+      </button>
+
+      <button class="tech-btn" id="btnReset" title="Reset all darkroom sliders (R / Cmd+R)">
+        <span>RESET [R]</span>
+      </button>
+
+      <button class="tech-btn" id="btnToggleSidebar" title="Toggle Control Sidebar (Tab / \)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="15" y1="3" x2="15" y2="21"></line>
+        </svg>
+        <span>PANEL [TAB]</span>
+      </button>
+
+      <button class="tech-btn primary" id="btnExport" title="Export Processed Master (Cmd+S)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>EXPORT [S]</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Darkroom Stage -->
+  <main class="app-workspace">
+    <!-- Viewport Container -->
+    <section class="viewport-container">
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <!-- Floating Zoom & Pan HUD Overlay -->
+        <div class="viewport-zoom-hud" id="zoomHud">
+          <button class="zoom-hud-btn" id="btnZoomOut" title="Zoom Out (Cmd - / Wheel)">−</button>
+          <span class="zoom-hud-value" id="valZoomLevel" title="Double click to reset 100%">100%</span>
+          <button class="zoom-hud-btn" id="btnZoomIn" title="Zoom In (Cmd + / Wheel)">+</button>
+          <button class="zoom-hud-btn fit-btn" id="btnZoomFit" title="Fit to Viewport (0)">FIT</button>
+        </div>
+
+        <!-- Empty State / Drop Target -->
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-reticle">
+            <div class="reticle-corner top-left"></div>
+            <div class="reticle-corner top-right"></div>
+            <div class="reticle-corner bottom-left"></div>
+            <div class="reticle-corner bottom-right"></div>
+
+            <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <h2 class="drop-title">LOAD SOURCE NEGATIVE</h2>
+            <p class="drop-sub">Drag and drop raw photo, JPEG, PNG, or TIFF</p>
+            <div class="drop-meta-tag">OFLIM · 19 B&amp;W SILVER BROMIDE EMULSIONS</div>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        </div>
+
+        <!-- Render Target Canvas -->
+        <div class="canvas-holder" id="canvasHolder" style="display: none;">
+          <canvas id="mainCanvas"></canvas>
+          <div class="split-slider-handle" id="splitHandle" style="display: none;">
+            <div class="split-line"></div>
+            <div class="split-pill">
+              <span>RAW</span>
+              <span class="split-arrow">◂▸</span>
+              <span>OFLIM</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Authentic 35mm Film Canister Carousel -->
+      <footer class="film-dock">
+        <div class="film-dock-header">
+          <div class="dock-title-group">
+            <span class="film-dock-title">Panchromatic &amp; Instant Stocks</span>
+            <span class="film-dock-count">19 EMULSIONS</span>
+          </div>
+          <div class="dock-shortcuts">
+            <span>SHORTCUTS:</span> <code>[</code> PREV <code>]</code> NEXT
+          </div>
+        </div>
+        <div class="film-carousel" id="filmCarousel">
+          <!-- Populated dynamically via JS with authentic 2-tone DX cassette tabs -->
+        </div>
+      </footer>
+    </section>
+
+    <!-- Right Precision Engineering Sidebar -->
+    <aside class="control-sidebar">
+      <!-- 1. Film Format Acutance -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span class="section-title">01. FILM FORMAT</span>
+          <span class="section-metric" id="metricGrainFactor">1.00× SCALE</span>
+        </div>
+        <div class="segmented-control" id="filmSizeControl">
+          <button class="segmented-btn" data-size="half">HALF [1]</button>
+          <button class="segmented-btn active" data-size="35mm">35mm [2]</button>
+          <button class="segmented-btn" data-size="120">120 [3]</button>
+          <button class="segmented-btn" data-size="large">4×5 [4]</button>
+        </div>
+      </div>
+
+      <!-- 2. Darkroom Sensitometry Base Controls -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span class="section-title">02. SENSITOMETRY &amp; PROCESS</span>
+          <span class="section-metric" id="presetYearBadge">2OO3 EXPIRED</span>
+        </div>
+
+        <!-- Density -->
+        <div class="control-row">
+          <div class="control-meta">
+            <span class="control-name">DENSITY</span>
+            <div class="control-stepper">
+              <button class="btn-step" data-target="sliderDensity" data-step="-0.10">−</button>
+              <span class="control-value" id="valDensity">0.00 EV</span>
+              <button class="btn-step" data-target="sliderDensity" data-step="0.10">+</button>
+            </div>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sliderDensity" min="-2" max="2" step="0.05" value="0">
+            <div class="slider-ticks">
+              <span>-2</span><span>-1</span><span class="center">0</span><span>+1</span><span>+2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pull / Push -->
+        <div class="control-row">
+          <div class="control-meta">
+            <span class="control-name">PULL / PUSH</span>
+            <div class="control-stepper">
+              <button class="btn-step" data-target="sliderPullPush" data-step="-0.5">−</button>
+              <span class="control-value" id="valPullPush">0.0 STOP</span>
+              <button class="btn-step" data-target="sliderPullPush" data-step="0.5">+</button>
+            </div>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sliderPullPush" min="-2" max="2" step="0.1" value="0">
+            <div class="slider-ticks">
+              <span>-2</span><span>-1</span><span class="center">0</span><span>+1</span><span>+2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contrast -->
+        <div class="control-row">
+          <div class="control-meta">
+            <span class="control-name">CONTRAST (GAMMA)</span>
+            <div class="control-stepper">
+              <button class="btn-step" data-target="sliderContrast" data-step="-0.05">−</button>
+              <span class="control-value" id="valContrast">0.00</span>
+              <button class="btn-step" data-target="sliderContrast" data-step="0.05">+</button>
+            </div>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sliderContrast" min="-1" max="1" step="0.02" value="0">
+            <div class="slider-ticks">
+              <span>-1</span><span>-0.5</span><span class="center">0</span><span>+0.5</span><span>+1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Highlights Shoulder -->
+        <div class="control-row">
+          <div class="control-meta">
+            <span class="control-name">HIGHLIGHT SHOULDER</span>
+            <div class="control-stepper">
+              <button class="btn-step" data-target="sliderHighlights" data-step="-0.05">−</button>
+              <span class="control-value" id="valHighlights">0.00</span>
+              <button class="btn-step" data-target="sliderHighlights" data-step="0.05">+</button>
+            </div>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sliderHighlights" min="-1" max="1" step="0.02" value="0">
+            <div class="slider-ticks">
+              <span>-1</span><span>-0.5</span><span class="center">0</span><span>+0.5</span><span>+1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shadows Toe -->
+        <div class="control-row">
+          <div class="control-meta">
+            <span class="control-name">SHADOW TOE</span>
+            <div class="control-stepper">
+              <button class="btn-step" data-target="sliderShadows" data-step="-0.05">−</button>
+              <span class="control-value" id="valShadows">0.00</span>
+              <button class="btn-step" data-target="sliderShadows" data-step="0.05">+</button>
+            </div>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sliderShadows" min="-1" max="1" step="0.02" value="0">
+            <div class="slider-ticks">
+              <span>-1</span><span>-0.5</span><span class="center">0</span><span>+0.5</span><span>+1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Optical Lens Glass Filters -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span class="section-title">03. OPTICAL LENS FILTERS</span>
+          <span class="section-metric" id="activeFilterMetric">PANCHROMATIC</span>
+        </div>
+        <div class="optical-filters-grid" id="filterChipsGrid">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- 4. Multi-Zone Silver Halide Grain Composite -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span class="section-title">04. SILVER GRAIN COMPOSITE</span>
+          <button class="btn-action-small" id="btnNewSeed">RE-SEED</button>
+        </div>
+
+        <!-- Shadow Grain (L) -->
+        <div class="control-row">
+          <div class="control-meta">
+            <span class="control-name">SHADOW GRAIN [L]</span>
+            <span class="control-value" id="valGrainL">100%</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sliderGrainL" min="0" max="2" step="0.05" value="1">
+            <div class="slider-ticks">
+              <span>0%</span><span>50%</span><span class="center">100%</span><span>150%</span><span>200%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Midtone Grain (M) -->
+        <div class="control-row">
+          <div class="control-meta">
+            <span class="control-name">MIDTONE GRAIN [M]</span>
+            <span class="control-value" id="valGrainM">100%</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sliderGrainM" min="0" max="2" step="0.05" value="1">
+            <div class="slider-ticks">
+              <span>0%</span><span>50%</span><span class="center">100%</span><span>150%</span><span>200%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Highlight Grain (R) -->
+        <div class="control-row">
+          <div class="control-meta">
+            <span class="control-name">HIGHLIGHT GRAIN [R]</span>
+            <span class="control-value" id="valGrainR">100%</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sliderGrainR" min="0" max="2" step="0.05" value="1">
+            <div class="slider-ticks">
+              <span>0%</span><span>50%</span><span class="center">100%</span><span>150%</span><span>200%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grain Scale -->
+        <div class="control-row">
+          <div class="control-meta">
+            <span class="control-name">GRAIN PARTICLE SCALE</span>
+            <span class="control-value" id="valGrainScale">1.00×</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sliderGrainScale" min="0.5" max="2" step="0.05" value="1">
+            <div class="slider-ticks">
+              <span>0.5×</span><span class="center">1.0×</span><span>1.5×</span><span>2.0×</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Negative Telemetry Box (Clean, no wrapped filename, no live master badge) -->
+      <div class="sidebar-section telemetry-section">
+        <div class="section-header">
+          <span class="section-title">05. NEGATIVE TELEMETRY</span>
+        </div>
+
+        <!-- Full-Width File Identification Card -->
+        <div class="telemetry-file-card">
+          <div class="file-card-top">
+            <span class="file-card-label">SOURCE NEGATIVE</span>
+            <span class="file-card-format" id="metaFormat">JPEG · 8-BIT</span>
+          </div>
+          <div class="file-card-name-box">
+            <svg class="file-card-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <span class="file-card-name" id="metaFilename" title="No file loaded">Untitled_Negative.jpg</span>
+          </div>
+        </div>
+
+        <!-- Technical Metadata Grid -->
+        <div class="telemetry-grid">
+          <div class="telemetry-item">
+            <span class="t-key">DIMENSIONS</span>
+            <span class="t-val" id="metaDimensions">0 × 0 px</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="t-key">RESOLUTION</span>
+            <span class="t-val" id="metaResolution">0.0 MP</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="t-key">ASPECT RATIO</span>
+            <span class="t-val" id="metaAspect">—</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="t-key">EMULSION CODE</span>
+            <span class="t-val" id="metaEmulsionCode">KTX-400</span>
+          </div>
+          <div class="telemetry-item full-width">
+            <span class="t-key">PROCESS ENGINE</span>
+            <span class="t-val engine">OFLIM Core-Sensitometry v0.1.0-alpha.1</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Technical Toast Notification -->
+  <div class="toast-notice" id="toastNotice">
+    <span class="toast-indicator">●</span>
+    <span id="toastMessage">Ready</span>
+  </div>
+
+  <!-- Core Engine & Modular UI Architecture -->
+  <script src="engine/presets.js"></script>
+  <script src="engine/processor.js"></script>
+  <script src="ui/platform.js"></script>
+  <script src="ui/components.js"></script>
+  <script src="ui/telemetry.js"></script>
+  <script src="ui/shortcuts.js"></script>
+  <script src="renderer.js"></script>
+</body>
+
+</html>
